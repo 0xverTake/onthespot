@@ -40,7 +40,7 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 # Définir le dossier d'installation
-INSTALL_DIR="/opt/onthespot"
+INSTALL_DIR="/home/trn/onthespot"
 SERVICE_NAME="onthespot"
 USER="trn"
 
@@ -59,10 +59,12 @@ apt install -y build-essential pkg-config cmake ninja-build git
 # Dépendances Python et Qt
 echo -e "${BLUE}2.2 Installation des dépendances Python et Qt...${NC}"
 apt install -y python3-pip python3-venv python3-dev \
-    python3-pyqt5 python3-pyqt5.qtwebengine \
-    ffmpeg libavcodec-dev libavformat-dev \
+    python3-pyqt5 python3-pyqt5.qtwebengine python3-pyqt5.qtmultimedia \
+    python3-wheel python3-setuptools \
+    ffmpeg libavcodec-dev libavformat-dev libavutil-dev \
     build-essential pkg-config \
-    libgl1-mesa-dev libglib2.0-dev
+    libgl1-mesa-dev libglib2.0-dev \
+    git curl wget
 
 # Dépendances multimédia
 echo -e "${BLUE}2.4 Installation des dépendances multimédia...${NC}"
@@ -125,8 +127,8 @@ After=network.target
 [Service]
 Type=simple
 User=$USER
-WorkingDirectory=$INSTALL_DIR/src
-ExecStart=/opt/onthespot/venv/bin/python /opt/onthespot/src/web_app.py
+WorkingDirectory=$INSTALL_DIR/src/onthespot
+ExecStart=/home/trn/onthespot/venv/bin/python /home/trn/onthespot/src/onthespot/web_app.py
 Restart=always
 RestartSec=3
 

@@ -23,7 +23,7 @@ fi
 # Définir le dossier d'installation
 INSTALL_DIR="/opt/onthespot"
 SERVICE_NAME="onthespot"
-USER="pi"
+USER="trn"
 
 echo -e "${BLUE}1. Mise à jour du système...${NC}"
 apt update && apt upgrade -y

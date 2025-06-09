@@ -3,6 +3,16 @@
 # Import des fonctions d'animation
 source "$(dirname "$0")/matrix.sh"
 
+# Fonction de nettoyage
+cleanup() {
+    stop_matrix_background
+    echo -e "\n${RED}Installation interrompue${NC}"
+    exit 1
+}
+
+# Capture des signaux d'interruption
+trap cleanup SIGINT SIGTERM
+
 # Couleurs pour les messages
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -12,21 +22,20 @@ MAGENTA='\033[0;35m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# ASCII Art stylé avec des caractères UTF-8
-# Couleur vert acide (bright green)
-echo -e "\033[38;5;82m"
-cat << "EOF"
+# Démarrer l'effet matrix en arrière-plan
+start_matrix_background
 
+# ASCII Art stylé
+ASCII_ART="
+ ██████╗ ██╗  ██╗██╗   ██╗███████╗██████╗ ████████╗ ██████╗ ██╗  ██╗███████╗▄▄███▄▄╗
+██▄████╗╚██╗██▄╝██╗   ██╗██▄▄▄▄█╗██▄▄▄▄█╗   ██╗   ██▄▄▄▄█╗██╗ ██▄╝██▄▄▄▄█╗██▄▄▄▄▄╝
+██╗██▄██╗ ╚███▄╝ ██╗   ██╗█████▄╝ █████▄╝    ██╗   ██████▄╝█████▄╝ █████╗ ██████╗
+████▄╝██╗ ██▄██╗ ╚██╗ ██▄╝██▄▄▄▄█╗██▄▄▄▄█╗   ██╗   ██▄▄▄▄█╗██▄▄▄▄█╗██▄▄▄╝ ╚▄▄▄▄██╗
+╚█████▄╝██▄╝ ██╗ ╚████▄╝ ██╗  ██╗██╗  ██╗   ██╗   ██╗  ██╗██╗  ██╗██╗  ██╗███████╗
+ ╚▄▄▄▄╝ ╚▄╝  ╚▄╝  ╚▄▄▄╝  ╚▄╝  ╚▄╝╚▄╝  ╚▄╝   ╚▄╝   ╚▄╝  ╚▄╝╚▄╝  ╚▄╝╚▄╝  ╚▄╝╚▄▄▄▄▄▄╝
+"
 
- ██████╗ ██╗  ██╗██╗   ██╗███████╗██████╗ ████████╗ █████╗ ██╗  ██╗███████╗▄▄███▄▄·
-██╔═████╗╚██╗██╔╝██║   ██║██╔════╝██╔══██╗╚══██╔══╝██╔══██╗██║ ██╔╝██╔════╝██╔════╝
-██║██╔██║ ╚███╔╝ ██║   ██║█████╗  ██████╔╝   ██║   ███████║█████╔╝ █████╗  ███████╗
-████╔╝██║ ██╔██╗ ╚██╗ ██╔╝██╔══╝  ██╔══██╗   ██║   ██╔══██║██╔═██╗ ██╔══╝  ╚════██║
-╚██████╔╝██╔╝ ██╗ ╚████╔╝ ███████╗██║  ██║   ██║   ██║  ██║██║  ██╗███████╗███████║
- ╚═════╝ ╚═╝  ╚═╝  ╚═══╝  ╚══════╝╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═▀▀▀══╝
-                                                                                   
-
-EOF
+show_ascii_art "$ASCII_ART"
 
 echo -e "${BLUE}=== Installation de OnTheSpot sur Raspberry Pi ===${NC}"
 
@@ -47,7 +56,7 @@ INSTALL_DIR="/home/trn/onthespot"
 SERVICE_NAME="onthespot"
 USER="trn"
 
-matrix_effect
+# Effet matrix déjà en cours
 echo -e "\n${CYAN}[INITIALIZING SYSTEM UPGRADE SEQUENCE]${NC}"
 cyber_loading "Scanning system components" 3
 echo -e "${BLUE}1. Mise à jour du système...${NC}"
@@ -76,9 +85,7 @@ apt install -y iptables ufw net-tools
 # Dépendances Python de base
 echo -e "${BLUE}2.4 Installation des dépendances Python...${NC}"
 apt install -y python3-pip python3-venv python3-dev \
-    python3-wheel python3-setuptools python3-flask \
-    python3-requests python3-urllib3 python3-cryptography \
-    python3-dotenv python3-flask-cors
+    python3-wheel python3-setuptools
 
 echo -e "${BLUE}2.5 Configuration du firewall...${NC}"
 # Vérification du statut de UFW
@@ -125,9 +132,17 @@ echo -e "${BLUE}5.3 Installation des dépendances du projet...${NC}"
 # Installation des dépendances depuis requirements.txt
 sudo -u $USER venv/bin/pip install -r requirements.txt
 
-# Vérification des dépendances critiques
-echo -e "${BLUE}5.4 Vérification des dépendances critiques...${NC}"
-sudo -u $USER venv/bin/pip install --no-deps flask flask-cors python-dotenv requests urllib3
+# Installation des dépendances Flask et ses composants essentiels
+echo -e "${BLUE}5.4 Installation des dépendances Flask...${NC}"
+sudo -u $USER venv/bin/pip install flask werkzeug jinja2 click itsdangerous
+sudo -u $USER venv/bin/pip install flask-cors python-dotenv requests urllib3
+
+# Vérification de l'installation de Flask
+echo -e "${BLUE}5.5 Vérification de l'installation...${NC}"
+if ! sudo -u $USER venv/bin/python -c "import flask, werkzeug" 2>/dev/null; then
+    echo -e "${RED}Erreur: Flask ou ses dépendances ne sont pas correctement installées${NC}"
+    exit 1
+fi
 
 # Création du service systemd
 echo -e "${BLUE}7. Création du service systemd...${NC}"
@@ -176,7 +191,7 @@ journalctl -u $SERVICE_NAME --no-pager -n 50
 # Obtenir l'adresse IP
 IP_ADDRESS=$(hostname -I | cut -d' ' -f1)
 
-matrix_effect
+# Effet matrix déjà en cours
 echo -e "\n${GREEN}╔════════════════════════════════════╗${NC}"
 echo -e "${GREEN}║     Installation terminée !        ║${NC}"
 echo -e "${GREEN}║  Système prêt pour exécution     ║${NC}"
@@ -188,3 +203,7 @@ echo -e "${BLUE}- Voir les logs :${NC} sudo journalctl -u $SERVICE_NAME -f"
 echo -e "${BLUE}- Redémarrer le service :${NC} sudo systemctl restart $SERVICE_NAME"
 echo -e "${BLUE}- Arrêter le service :${NC} sudo systemctl stop $SERVICE_NAME"
 echo -e "${BLUE}- Voir le statut :${NC} sudo systemctl status $SERVICE_NAME"
+
+# Arrêt propre de l'effet matrix
+sleep 2  # Pause pour voir le message final
+stop_matrix_background

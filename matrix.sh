@@ -1,26 +1,56 @@
 #!/bin/bash
 
-matrix_effect() {
+start_matrix_background() {
+    # Sauvegarde le contenu de l'écran
+    tput smcup
+    # Cache le curseur
+    echo -e "\e[?25l"
+    
+    # Démarrer l'effet matrix en arrière-plan
+    while true; do
+        local lines=$(tput lines)
+        local cols=$(tput cols)
+        local x=$((RANDOM % cols))
+        local chars=("ｱ" "ｲ" "ｳ" "ｴ" "ｵ" "カ" "キ" "ク" "ケ" "コ" "サ" "シ" "ス" "セ" "ソ" "タ" "チ" "ツ" "テ" "ト" "ナ" "ニ" "ヌ" "ネ" "ノ" "ハ" "ヒ" "フ" "ヘ" "ホ" "マ" "ミ" "ム" "メ" "モ" "ヤ" "ユ" "ヨ" "ラ" "リ" "ル" "レ" "ロ" "ワ" "ヲ" "ン" "ー" "∟" "¦" "╌" "╍" "╎" "╏")
+        
+        for ((y=0; y<lines; y++)); do
+            echo -ne "\e[${y};${x}H\e[32m\e[1;40m${chars[$((RANDOM % ${#chars[@]}))]}"
+            sleep 0.1
+        done
+    done &
+    MATRIX_PID=$!
+}
+
+stop_matrix_background() {
+    # Tue le processus matrix
+    if [ ! -z "$MATRIX_PID" ]; then
+        kill $MATRIX_PID 2>/dev/null
+    fi
+    # Restaure l'écran
+    tput rmcup
+    # Montre le curseur
+    echo -e "\e[?25h"
+}
+
+show_ascii_art() {
+    local text="$1"
+    local offset=8  # Décalage pour centrer l'ASCII art
+    
+    # Obtient les dimensions de l'écran
     local lines=$(tput lines)
     local cols=$(tput cols)
-    local chars=("ｱ" "ｲ" "ｳ" "ｴ" "ｵ" "カ" "キ" "ク" "ケ" "コ" "サ" "シ" "ス" "セ" "ソ" "タ" "チ" "ツ" "テ" "ト" "ナ" "ニ" "ヌ" "ネ" "ノ" "ハ" "ヒ" "フ" "ヘ" "ホ" "マ" "ミ" "ム" "メ" "モ" "ヤ" "ユ" "ヨ" "ラ" "リ" "ル" "レ" "ロ" "ワ" "ヲ" "ン" "ー" "∟" "¦" "╌" "╍" "╎" "╏" "═" "║" "╒" "╓" "╔" "╕" "╖" "╗" "╘" "╙" "╚" "╛" "╜" "╝" "╞" "╟" "╠" "╡" "╢" "╣" "╤" "╥" "╦" "╧" "╨" "╩" "╪" "╫" "╬" "○" "╭" "╮" "╯" "╰")
-
-    # Clear screen and hide cursor
-    clear
-    echo -e "\e[?25l"
-
-    # Matrix effect
-    for ((i=0; i<30; i++)); do
-        local x=$((RANDOM % cols))
-        local delay=$((RANDOM % 5))
-        for ((y=0; y<lines; y++)); do
-            echo -ne "\e[${y};${x}H\e[32m${chars[$((RANDOM % ${#chars[@]}))]}"
-            sleep 0.01
-        done &
+    
+    # Position pour centrer verticalement
+    local start_line=$((lines/4))
+    
+    # Efface la zone où l'ASCII art sera affiché
+    for ((i=0; i<10; i++)); do
+        echo -ne "\e[$((start_line+i));0H\e[K"
     done
-    sleep 2
-    clear
-    echo -e "\e[?25h" # Show cursor
+    
+    # Affiche l'ASCII art avec un fond noir
+    echo -ne "\e[${start_line}H"
+    echo -e "\e[38;5;82m\e[40m$text\e[0m"
 }
 
 cyber_loading() {

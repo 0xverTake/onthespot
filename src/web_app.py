@@ -46,8 +46,12 @@ def get_music_directory():
         base_dir = os.path.expanduser('~/Downloads/Music')
     elif os.path.exists('/storage/emulated/0'):  # Android
         base_dir = '/storage/emulated/0/Music'
-    else:  # Linux ou autre
-        base_dir = os.path.expanduser('~/Downloads/Music')
+    else:  # Linux ou Raspberry Pi
+        # Vérifier si nous sommes sur un Raspberry Pi
+        if os.path.exists('/opt/onthespot'):
+            base_dir = '/opt/onthespot/downloads'
+        else:
+            base_dir = os.path.expanduser('~/Downloads/Music')
     
     # Créer le dossier s'il n'existe pas
     os.makedirs(base_dir, exist_ok=True)
@@ -82,9 +86,8 @@ class Download:
         if not self.quality.isdigit() or int(self.quality) <= 0:
             raise ValueError('Qualité audio invalide')
         
-        # Utiliser le dossier de base du projet
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        self.directory = os.path.join(base_dir, 'downloads')
+        # Utiliser le dossier de musique configuré
+        self.directory = get_music_directory()
         # Créer le dossier s'il n'existe pas
         os.makedirs(self.directory, exist_ok=True)
         self.id = str(uuid.uuid4())
@@ -489,8 +492,8 @@ def add_security_headers(response):
 @app.route('/audio/<path:filename>')
 def serve_audio(filename):
     try:
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        downloads_dir = os.path.join(base_dir, 'downloads')
+        # Utiliser le dossier de musique configuré
+        downloads_dir = get_music_directory()
         
         # Convertir les séparateurs de chemin
         filename = filename.replace('/', os.path.sep)
@@ -499,7 +502,7 @@ def serve_audio(filename):
         print(f'Tentative de lecture du fichier: {file_path}')
         
         if os.path.exists(file_path):
-            # Sécurité : vérifier que le fichier est bien dans le dossier downloads
+            # Sécurité : vérifier que le fichier est bien dans le dossier de musique
             if not os.path.commonpath([file_path]).startswith(os.path.commonpath([downloads_dir])):
                 print(f'Tentative d\'accès non autorisée: {file_path}')
                 return '', 403

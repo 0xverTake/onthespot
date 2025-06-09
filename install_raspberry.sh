@@ -56,15 +56,12 @@ apt update
 echo -e "${BLUE}2.1 Installation des outils de développement...${NC}"
 apt install -y build-essential pkg-config cmake ninja-build git
 
-# Dépendances Python
-echo -e "${BLUE}2.2 Installation des dépendances Python...${NC}"
-apt install -y python3-pip python3-dev python3-wheel
-
-# Dépendances Qt et GUI
-echo -e "${BLUE}2.3 Installation des dépendances Qt...${NC}"
-apt install -y python3-pyqt6 python3-pyqt6.qtmultimedia python3-pyqt6.qtsvg \
-    python3-pyqt6.qtwebengine python3-pyqt6-dev \
-    qt6-base-dev qt6-multimedia-dev qt6-svg-dev qt6-webengine-dev \
+# Dépendances Python et Qt
+echo -e "${BLUE}2.2 Installation des dépendances Python et Qt...${NC}"
+apt install -y python3-pip python3-venv python3-dev \
+    python3-pyqt5 python3-pyqt5.qtwebengine \
+    ffmpeg libavcodec-dev libavformat-dev \
+    build-essential pkg-config \
     libgl1-mesa-dev libglib2.0-dev
 
 # Dépendances multimédia
@@ -103,15 +100,20 @@ echo -e "${BLUE}4. Clonage du projet...${NC}"
 cd $INSTALL_DIR
 sudo -u $USER git clone https://github.com/0xverTake/onthespot.git .
 
-echo -e "${BLUE}5. Installation des dépendances Python...${NC}"
+echo -e "${BLUE}5. Configuration de l'environnement Python...${NC}"
+
+# Création et activation de l'environnement virtuel
+echo -e "${BLUE}5.1 Création de l'environnement virtuel...${NC}"
+sudo -u $USER python3 -m venv venv
 
 # Mise à jour des outils de base Python
-echo -e "${BLUE}5.1 Mise à jour pip...${NC}"
-sudo -u $USER python3 -m pip install --upgrade pip
+echo -e "${BLUE}5.2 Mise à jour pip...${NC}"
+sudo -u $USER venv/bin/pip install --upgrade pip setuptools wheel
 
-# Installation des dépendances du projet
-echo -e "${BLUE}5.2 Installation des dépendances du projet...${NC}"
-sudo -u $USER python3 -m pip install -r requirements.txt
+# Installation des dépendances
+echo -e "${BLUE}5.3 Installation des dépendances...${NC}"
+sudo -u $USER venv/bin/pip install PyQt5
+sudo -u $USER venv/bin/pip install -r requirements.txt
 
 # Création du service systemd
 echo -e "${BLUE}7. Création du service systemd...${NC}"
@@ -124,7 +126,7 @@ After=network.target
 Type=simple
 User=$USER
 WorkingDirectory=$INSTALL_DIR/src
-ExecStart=/usr/bin/python3 /opt/onthespot/src/web_app.py
+ExecStart=/opt/onthespot/venv/bin/python /opt/onthespot/src/web_app.py
 Restart=always
 RestartSec=3
 

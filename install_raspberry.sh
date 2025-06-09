@@ -48,11 +48,34 @@ echo -e "${BLUE}1. Mise à jour du système...${NC}"
 apt update && apt upgrade -y
 
 echo -e "${BLUE}2. Installation des dépendances système...${NC}"
-# Installation des dépendances pour UFW et autres outils nécessaires
-apt install -y python3-pip python3-venv ffmpeg git iptables ufw net-tools \
-    build-essential pkg-config python3-dev \
-    qt6-base-dev qt6-declarative-dev qt6-tools-dev qt6-tools-dev-tools \
-    libgl1-mesa-dev
+# Mise à jour des dépôts et outils de base
+apt install -y software-properties-common apt-transport-https ca-certificates curl gnupg
+apt update
+
+# Outils de développement essentiels
+echo -e "${BLUE}2.1 Installation des outils de développement...${NC}"
+apt install -y build-essential pkg-config cmake ninja-build git
+
+# Dépendances Python
+echo -e "${BLUE}2.2 Installation des dépendances Python...${NC}"
+apt install -y python3-pip python3-venv python3-dev python3-wheel
+
+# Dépendances Qt et GUI
+echo -e "${BLUE}2.3 Installation des dépendances Qt...${NC}"
+apt install -y qt6-base-dev qt6-base-private-dev \
+    qt6-declarative-dev qt6-declarative-private-dev \
+    qt6-tools-dev qt6-tools-dev-tools \
+    qt6-l10n-tools qt6-translations-l10n \
+    qmake6 \
+    libgl1-mesa-dev libglib2.0-dev
+
+# Dépendances multimédia
+echo -e "${BLUE}2.4 Installation des dépendances multimédia...${NC}"
+apt install -y ffmpeg libavcodec-dev libavformat-dev libswscale-dev
+
+# Outils réseau et sécurité
+echo -e "${BLUE}2.5 Installation des outils réseau...${NC}"
+apt install -y iptables ufw net-tools
 
 echo -e "${BLUE}2.1 Configuration du firewall...${NC}"
 # Vérification du statut de UFW
@@ -87,9 +110,23 @@ sudo -u $USER python3 -m venv venv
 source venv/bin/activate
 
 echo -e "${BLUE}6. Installation des dépendances Python...${NC}"
-# Installation de PyQt6 en premier
-sudo -u $USER venv/bin/pip install PyQt6
-# Installation des autres dépendances
+# Mise à jour des outils de base Python
+echo -e "${BLUE}6.1 Mise à jour pip, setuptools, wheel...${NC}"
+sudo -u $USER venv/bin/pip install --upgrade pip setuptools wheel
+
+# Configuration de l'environnement Qt6
+echo -e "${BLUE}6.2 Configuration de Qt6...${NC}"
+export QT_SELECT=qt6
+export QMAKE=/usr/lib/qt6/bin/qmake
+
+# Installation des composants PyQt6 dans le bon ordre
+echo -e "${BLUE}6.3 Installation de PyQt6 et ses dépendances...${NC}"
+sudo -u $USER venv/bin/pip install sip PyQt6-sip
+sudo -u $USER venv/bin/pip install PyQt6-Qt6
+sudo -u $USER venv/bin/pip install --no-deps PyQt6
+
+# Installation des dépendances du projet
+echo -e "${BLUE}6.4 Installation des dépendances du projet...${NC}"
 sudo -u $USER venv/bin/pip install -r requirements.txt
 
 # Création du service systemd

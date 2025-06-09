@@ -58,15 +58,13 @@ apt install -y build-essential pkg-config cmake ninja-build git
 
 # Dépendances Python
 echo -e "${BLUE}2.2 Installation des dépendances Python...${NC}"
-apt install -y python3-pip python3-venv python3-dev python3-wheel
+apt install -y python3-pip python3-dev python3-wheel
 
 # Dépendances Qt et GUI
 echo -e "${BLUE}2.3 Installation des dépendances Qt...${NC}"
-apt install -y qt6-base-dev qt6-base-private-dev \
-    qt6-declarative-dev qt6-declarative-private-dev \
-    qt6-tools-dev qt6-tools-dev-tools \
-    qt6-l10n-tools qt6-translations-l10n \
-    qmake6 \
+apt install -y python3-pyqt6 python3-pyqt6.qtmultimedia python3-pyqt6.qtsvg \
+    python3-pyqt6.qtwebengine python3-pyqt6-dev \
+    qt6-base-dev qt6-multimedia-dev qt6-svg-dev qt6-webengine-dev \
     libgl1-mesa-dev libglib2.0-dev
 
 # Dépendances multimédia
@@ -105,29 +103,15 @@ echo -e "${BLUE}4. Clonage du projet...${NC}"
 cd $INSTALL_DIR
 sudo -u $USER git clone https://github.com/0xverTake/onthespot.git .
 
-echo -e "${BLUE}5. Création de l'environnement virtuel...${NC}"
-sudo -u $USER python3 -m venv venv
-source venv/bin/activate
+echo -e "${BLUE}5. Installation des dépendances Python...${NC}"
 
-echo -e "${BLUE}6. Installation des dépendances Python...${NC}"
 # Mise à jour des outils de base Python
-echo -e "${BLUE}6.1 Mise à jour pip, setuptools, wheel...${NC}"
-sudo -u $USER venv/bin/pip install --upgrade pip setuptools wheel
-
-# Configuration de l'environnement Qt6
-echo -e "${BLUE}6.2 Configuration de Qt6...${NC}"
-export QT_SELECT=qt6
-export QMAKE=/usr/lib/qt6/bin/qmake
-
-# Installation des composants PyQt6 dans le bon ordre
-echo -e "${BLUE}6.3 Installation de PyQt6 et ses dépendances...${NC}"
-sudo -u $USER venv/bin/pip install sip PyQt6-sip
-sudo -u $USER venv/bin/pip install PyQt6-Qt6
-sudo -u $USER venv/bin/pip install --no-deps PyQt6
+echo -e "${BLUE}5.1 Mise à jour pip...${NC}"
+sudo -u $USER python3 -m pip install --upgrade pip
 
 # Installation des dépendances du projet
-echo -e "${BLUE}6.4 Installation des dépendances du projet...${NC}"
-sudo -u $USER venv/bin/pip install -r requirements.txt
+echo -e "${BLUE}5.2 Installation des dépendances du projet...${NC}"
+sudo -u $USER python3 -m pip install -r requirements.txt
 
 # Création du service systemd
 echo -e "${BLUE}7. Création du service systemd...${NC}"
@@ -140,8 +124,7 @@ After=network.target
 Type=simple
 User=$USER
 WorkingDirectory=$INSTALL_DIR/src
-Environment=PATH=$INSTALL_DIR/venv/bin:$PATH
-ExecStart=$INSTALL_DIR/venv/bin/python web_app.py
+ExecStart=/usr/bin/python3 /opt/onthespot/src/web_app.py
 Restart=always
 RestartSec=3
 

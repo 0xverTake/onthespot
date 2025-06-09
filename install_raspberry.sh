@@ -49,7 +49,10 @@ apt update && apt upgrade -y
 
 echo -e "${BLUE}2. Installation des dépendances système...${NC}"
 # Installation des dépendances pour UFW et autres outils nécessaires
-apt install -y python3-pip python3-venv ffmpeg git iptables ufw net-tools
+apt install -y python3-pip python3-venv ffmpeg git iptables ufw net-tools \
+    build-essential pkg-config python3-dev \
+    qt6-base-dev qt6-declarative-dev qt6-tools-dev qt6-tools-dev-tools \
+    libgl1-mesa-dev
 
 echo -e "${BLUE}2.1 Configuration du firewall...${NC}"
 # Vérification du statut de UFW
@@ -84,6 +87,9 @@ sudo -u $USER python3 -m venv venv
 source venv/bin/activate
 
 echo -e "${BLUE}6. Installation des dépendances Python...${NC}"
+# Installation de PyQt6 en premier
+sudo -u $USER venv/bin/pip install PyQt6
+# Installation des autres dépendances
 sudo -u $USER venv/bin/pip install -r requirements.txt
 
 # Création du service systemd

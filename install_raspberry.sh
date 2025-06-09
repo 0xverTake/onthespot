@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Import des fonctions d'animation
+source "$(dirname "$0")/matrix.sh"
+
 # Couleurs pour les messages
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -44,9 +47,15 @@ INSTALL_DIR="/home/trn/onthespot"
 SERVICE_NAME="onthespot"
 USER="trn"
 
+matrix_effect
+echo -e "\n${CYAN}[INITIALIZING SYSTEM UPGRADE SEQUENCE]${NC}"
+cyber_loading "Scanning system components" 3
 echo -e "${BLUE}1. Mise à jour du système...${NC}"
+progress_bar "System Update" 3
 apt update && apt upgrade -y
 
+echo -e "\n${CYAN}[INSTALLING CORE DEPENDENCIES]${NC}"
+cyber_loading "Analyzing required packages" 2
 echo -e "${BLUE}2. Installation des dépendances système...${NC}"
 # Mise à jour des dépôts et outils de base
 apt install -y software-properties-common apt-transport-https ca-certificates curl gnupg
@@ -56,26 +65,22 @@ apt update
 echo -e "${BLUE}2.1 Installation des outils de développement...${NC}"
 apt install -y build-essential pkg-config cmake ninja-build git
 
-# Dépendances Python et Qt
-echo -e "${BLUE}2.2 Installation des dépendances Python et Qt...${NC}"
-apt install -y python3-pip python3-venv python3-dev \
-    python3-pyqt5 python3-pyqt5.qtwebengine python3-pyqt5.qtmultimedia \
-    python3-pyqt5.sip python3-pyqt5.qtcore python3-pyqt5.qtgui \
-    python3-wheel python3-setuptools \
-    ffmpeg libavcodec-dev libavformat-dev libavutil-dev \
-    build-essential pkg-config \
-    libgl1-mesa-dev libglib2.0-dev \
-    git curl wget
-
 # Dépendances multimédia
-echo -e "${BLUE}2.4 Installation des dépendances multimédia...${NC}"
+echo -e "${BLUE}2.2 Installation des dépendances multimédia...${NC}"
 apt install -y ffmpeg libavcodec-dev libavformat-dev libswscale-dev
 
 # Outils réseau et sécurité
-echo -e "${BLUE}2.5 Installation des outils réseau...${NC}"
+echo -e "${BLUE}2.3 Installation des outils réseau...${NC}"
 apt install -y iptables ufw net-tools
 
-echo -e "${BLUE}2.1 Configuration du firewall...${NC}"
+# Dépendances Python de base
+echo -e "${BLUE}2.4 Installation des dépendances Python...${NC}"
+apt install -y python3-pip python3-venv python3-dev \
+    python3-wheel python3-setuptools python3-flask \
+    python3-requests python3-urllib3 python3-cryptography \
+    python3-dotenv python3-flask-cors
+
+echo -e "${BLUE}2.5 Configuration du firewall...${NC}"
 # Vérification du statut de UFW
 if ! systemctl is-active --quiet ufw; then
     echo -e "${YELLOW}Activation du service UFW...${NC}"
@@ -103,6 +108,8 @@ echo -e "${BLUE}4. Clonage du projet...${NC}"
 cd $INSTALL_DIR
 sudo -u $USER git clone https://github.com/0xverTake/onthespot.git .
 
+echo -e "\n${CYAN}[CONFIGURING PYTHON MATRIX]${NC}"
+cyber_loading "Initializing virtual environment" 2
 echo -e "${BLUE}5. Configuration de l'environnement Python...${NC}"
 
 # Création et activation de l'environnement virtuel
@@ -114,13 +121,13 @@ echo -e "${BLUE}5.2 Mise à jour pip...${NC}"
 sudo -u $USER venv/bin/pip install --upgrade pip setuptools wheel
 
 # Installation des dépendances
-echo -e "${BLUE}5.3 Installation des dépendances...${NC}"
-# Créer les liens symboliques pour PyQt5 système
-ln -s /usr/lib/python3/dist-packages/PyQt5 venv/lib/python3.11/site-packages/
-ln -s /usr/lib/python3/dist-packages/sip.* venv/lib/python3.11/site-packages/
-
-# Installation des autres dépendances
+echo -e "${BLUE}5.3 Installation des dépendances du projet...${NC}"
+# Installation des dépendances depuis requirements.txt
 sudo -u $USER venv/bin/pip install -r requirements.txt
+
+# Vérification des dépendances critiques
+echo -e "${BLUE}5.4 Vérification des dépendances critiques...${NC}"
+sudo -u $USER venv/bin/pip install --no-deps flask flask-cors python-dotenv requests urllib3
 
 # Création du service systemd
 echo -e "${BLUE}7. Création du service systemd...${NC}"
@@ -169,7 +176,11 @@ journalctl -u $SERVICE_NAME --no-pager -n 50
 # Obtenir l'adresse IP
 IP_ADDRESS=$(hostname -I | cut -d' ' -f1)
 
-echo -e "\n${GREEN}=== Installation terminée ! ===${NC}"
+matrix_effect
+echo -e "\n${GREEN}╔════════════════════════════════════╗${NC}"
+echo -e "${GREEN}║     Installation terminée !        ║${NC}"
+echo -e "${GREEN}║  Système prêt pour exécution     ║${NC}"
+echo -e "${GREEN}╚════════════════════════════════════╝${NC}"
 echo -e "${GREEN}OnTheSpot est maintenant installé et configuré sur votre Raspberry Pi${NC}"
 echo -e "${GREEN}Vous pouvez y accéder à l'adresse : http://$IP_ADDRESS:5000${NC}"
 echo -e "\nCommandes utiles :"

@@ -60,6 +60,7 @@ apt install -y build-essential pkg-config cmake ninja-build git
 echo -e "${BLUE}2.2 Installation des dépendances Python et Qt...${NC}"
 apt install -y python3-pip python3-venv python3-dev \
     python3-pyqt5 python3-pyqt5.qtwebengine python3-pyqt5.qtmultimedia \
+    python3-pyqt5.sip python3-pyqt5.qtcore python3-pyqt5.qtgui \
     python3-wheel python3-setuptools \
     ffmpeg libavcodec-dev libavformat-dev libavutil-dev \
     build-essential pkg-config \
@@ -114,7 +115,11 @@ sudo -u $USER venv/bin/pip install --upgrade pip setuptools wheel
 
 # Installation des dépendances
 echo -e "${BLUE}5.3 Installation des dépendances...${NC}"
-sudo -u $USER venv/bin/pip install PyQt5
+# Créer les liens symboliques pour PyQt5 système
+ln -s /usr/lib/python3/dist-packages/PyQt5 venv/lib/python3.11/site-packages/
+ln -s /usr/lib/python3/dist-packages/sip.* venv/lib/python3.11/site-packages/
+
+# Installation des autres dépendances
 sudo -u $USER venv/bin/pip install -r requirements.txt
 
 # Création du service systemd
@@ -156,6 +161,10 @@ chmod 755 $INSTALL_DIR/downloads
 # Vérification du service
 echo -e "${BLUE}11. Vérification du statut du service...${NC}"
 systemctl status $SERVICE_NAME
+
+# Vérifier les logs pour les erreurs
+echo -e "${BLUE}12. Vérification des logs...${NC}"
+journalctl -u $SERVICE_NAME --no-pager -n 50
 
 # Obtenir l'adresse IP
 IP_ADDRESS=$(hostname -I | cut -d' ' -f1)

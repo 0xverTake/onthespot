@@ -162,6 +162,17 @@ if ! python3 -c "import PyQt6.QtCore" 2>/dev/null; then
     exit 1
 fi
 
+# Installation manuelle de yt-dlp
+echo -e "${BLUE}6. Installation manuelle de yt-dlp...${NC}"
+sudo -u $USER venv/bin/pip uninstall -y yt-dlp
+sudo -u $USER venv/bin/pip install --no-cache-dir yt-dlp==2023.7.6
+
+# Vérification de yt-dlp
+if ! sudo -u $USER venv/bin/python -c "import yt_dlp" 2>/dev/null; then
+    echo -e "${RED}Erreur: yt-dlp n'est pas correctement installé${NC}"
+    exit 1
+fi
+
 # Création du service systemd
 echo -e "${BLUE}7. Création du service systemd...${NC}"
 cat > /etc/systemd/system/$SERVICE_NAME.service << EOL
@@ -173,6 +184,8 @@ After=network.target
 Type=simple
 User=$USER
 WorkingDirectory=$INSTALL_DIR/src
+Environment=PATH=/home/trn/onthespot/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=PYTHONPATH=/home/trn/onthespot/venv/lib/python3.11/site-packages
 ExecStart=/home/trn/onthespot/venv/bin/python /home/trn/onthespot/src/web_app.py
 Restart=always
 RestartSec=3

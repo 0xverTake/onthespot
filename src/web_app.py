@@ -14,29 +14,57 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def get_ffmpeg_path():
-    ffmpeg_path = r'C:\ffmpeg\bin\ffmpeg.exe'
-    print(f'Vérification de FFmpeg à: {ffmpeg_path}')
+    print('Début de la recherche de FFmpeg...')
     
-    if not os.path.exists(ffmpeg_path):
-        print(f'FFmpeg non trouvé à: {ffmpeg_path}')
-        # Essayer de trouver FFmpeg dans le PATH
-        import shutil
-        ffmpeg_in_path = shutil.which('ffmpeg')
-        if ffmpeg_in_path:
-            print(f'FFmpeg trouvé dans le PATH: {ffmpeg_in_path}')
-            return ffmpeg_in_path
-        else:
-            raise Exception('FFmpeg n\'est pas installé ou n\'est pas dans le PATH')
-    
-    # Vérifier les permissions
+    # Vérifier si FFmpeg est dans le PATH
+    import subprocess
     try:
-        with open(ffmpeg_path, 'rb') as f:
-            pass
-        print(f'FFmpeg est accessible en lecture')
-        return ffmpeg_path
+        # Exécuter ffmpeg -version pour vérifier l'installation
+        result = subprocess.run(['ffmpeg', '-version'], 
+                              capture_output=True, 
+                              text=True)
+        if result.returncode == 0:
+            print('FFmpeg est installé et fonctionne :')
+            print(result.stdout.split('\n')[0])  # Afficher la version
+            return 'ffmpeg'  # Utiliser la commande directement
     except Exception as e:
-        print(f'Erreur d\'accès à FFmpeg: {str(e)}')
-        raise Exception(f'FFmpeg existe mais n\'est pas accessible: {str(e)}')
+        print(f'Erreur lors de l\'exécution de ffmpeg : {str(e)}')
+
+    # Vérifier les chemins spécifiques
+    possible_paths = [
+        '/usr/bin/ffmpeg',
+        '/usr/local/bin/ffmpeg',
+        '/bin/ffmpeg',
+        r'C:\ffmpeg\bin\ffmpeg.exe'
+    ]
+
+    print('Recherche de FFmpeg dans les chemins possibles :')
+    for path in possible_paths:
+        print(f'Vérification de {path}')
+        if os.path.exists(path):
+            print(f'- Trouvé à {path}')
+            try:
+                # Vérifier si le fichier est exécutable
+                if os.access(path, os.X_OK):
+                    print(f'- Exécutable : Oui')
+                    return path
+                else:
+                    print(f'- Exécutable : Non')
+            except Exception as e:
+                print(f'- Erreur de permission : {str(e)}')
+        else:
+            print(f'- Non trouvé')
+
+    # Si on arrive ici, FFmpeg n'a pas été trouvé
+    print('\nRésumé de la recherche :')
+    print('- Vérification du PATH : échec')
+    print('- Vérification des chemins spécifiques : échec')
+    print('\nSuggestions de dépannage :')
+    print('1. Vérifiez que FFmpeg est installé : sudo apt install ffmpeg')
+    print('2. Vérifiez le PATH : echo $PATH')
+    print('3. Vérifiez les permissions : ls -l /usr/bin/ffmpeg')
+    
+    raise Exception('FFmpeg n\'est pas trouvé ou n\'est pas accessible. Vérifiez les logs pour plus de détails.')
 
 def get_music_directory():
     # Obtenir le chemin de base selon le système
@@ -99,6 +127,34 @@ class Download:
 
     def _download(self):
         try:
+            print(f'Début du téléchargement pour {self.url}')
+            print(f'Vérification de FFmpeg...')
+            ffmpeg_path = '/usr/bin/ffmpeg'
+            
+            # Vérifier que FFmpeg existe et est exécutable
+            if not os.path.exists(ffmpeg_path):
+                raise Exception(f'FFmpeg non trouvé à {ffmpeg_path}')
+            if not os.access(ffmpeg_path, os.X_OK):
+                raise Exception(f'FFmpeg existe mais n\'est pas exécutable à {ffmpeg_path}')
+            
+            print(f'FFmpeg trouvé et exécutable à {ffmpeg_path}')
+            
+            # Configuration de yt-dlp
+            ydl_opts = {
+                'ffmpeg_location': ffmpeg_path,
+                'format': 'bestaudio/best',
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': self.format,
+                    'preferredquality': self.quality,
+                }],
+                'outtmpl': os.path.join(self.directory, '%(title)s.%(ext)s'),
+                'verbose': True,
+                'progress_hooks': [self._progress_hook]
+            }
+            
+            print('Configuration yt-dlp :', ydl_opts)
+
             print(f'Démarrage du téléchargement: {self.url}')
             self.status = 'Downloading'
             
@@ -167,9 +223,9 @@ class Download:
             else:
                 # Pour les autres services, télécharger directement
                 # Vérifier si FFmpeg est disponible
-                ffmpeg_path = r'C:\ffmpeg\bin\ffmpeg.exe'
-                if not os.path.exists(ffmpeg_path):
-                    raise Exception('FFmpeg n\'est pas installé. Veuillez installer FFmpeg dans C:\ffmpeg')
+                ffmpeg_path = '/usr/bin/ffmpeg'
+                if not os.path.exists(ffmpeg_path) or not os.access(ffmpeg_path, os.X_OK):
+                    raise Exception(f'FFmpeg n\'est pas accessible à {ffmpeg_path}. Vérifiez l\'installation.')
                 print(f'Utilisation de FFmpeg: {ffmpeg_path}')
 
                 ydl_opts = {

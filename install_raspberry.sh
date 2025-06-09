@@ -4,7 +4,26 @@
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+MAGENTA='\033[0;35m'
+YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
+
+# ASCII Art stylé avec des caractères UTF-8
+# Couleur vert acide (bright green)
+echo -e "\033[38;5;82m"
+cat << "EOF"
+
+
+ ██████╗ ██╗  ██╗██╗   ██╗███████╗██████╗ ████████╗ █████╗ ██╗  ██╗███████╗▄▄███▄▄·
+██╔═████╗╚██╗██╔╝██║   ██║██╔════╝██╔══██╗╚══██╔══╝██╔══██╗██║ ██╔╝██╔════╝██╔════╝
+██║██╔██║ ╚███╔╝ ██║   ██║█████╗  ██████╔╝   ██║   ███████║█████╔╝ █████╗  ███████╗
+████╔╝██║ ██╔██╗ ╚██╗ ██╔╝██╔══╝  ██╔══██╗   ██║   ██╔══██║██╔═██╗ ██╔══╝  ╚════██║
+╚██████╔╝██╔╝ ██╗ ╚████╔╝ ███████╗██║  ██║   ██║   ██║  ██║██║  ██╗███████╗███████║
+ ╚═════╝ ╚═╝  ╚═╝  ╚═══╝  ╚══════╝╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═▀▀▀══╝
+                                                                                   
+
+EOF
 
 echo -e "${BLUE}=== Installation de OnTheSpot sur Raspberry Pi ===${NC}"
 
@@ -29,7 +48,28 @@ echo -e "${BLUE}1. Mise à jour du système...${NC}"
 apt update && apt upgrade -y
 
 echo -e "${BLUE}2. Installation des dépendances système...${NC}"
-apt install -y python3-pip python3-venv ffmpeg git
+# Installation des dépendances pour UFW et autres outils nécessaires
+apt install -y python3-pip python3-venv ffmpeg git iptables ufw net-tools
+
+echo -e "${BLUE}2.1 Configuration du firewall...${NC}"
+# Vérification du statut de UFW
+if ! systemctl is-active --quiet ufw; then
+    echo -e "${YELLOW}Activation du service UFW...${NC}"
+    systemctl enable ufw
+    systemctl start ufw
+fi
+
+# Configuration du firewall
+echo -e "${YELLOW}Configuration des règles du firewall...${NC}"
+ufw default deny incoming
+ufw default allow outgoing
+ufw allow ssh
+ufw allow 5000/tcp comment 'OnTheSpot Web Interface'
+ufw --force enable
+
+# Afficher le statut du firewall
+echo -e "${GREEN}Statut du firewall :${NC}"
+ufw status verbose
 
 echo -e "${BLUE}3. Création du dossier d'installation...${NC}"
 mkdir -p $INSTALL_DIR
@@ -37,7 +77,7 @@ chown $USER:$USER $INSTALL_DIR
 
 echo -e "${BLUE}4. Clonage du projet...${NC}"
 cd $INSTALL_DIR
-sudo -u $USER git clone https://github.com/0xverTake/onthespot.git
+sudo -u $USER git clone https://github.com/0xverTake/onthespot.git .
 
 echo -e "${BLUE}5. Création de l'environnement virtuel...${NC}"
 sudo -u $USER python3 -m venv venv
@@ -56,9 +96,9 @@ After=network.target
 [Service]
 Type=simple
 User=$USER
-WorkingDirectory=$INSTALL_DIR
+WorkingDirectory=$INSTALL_DIR/src
 Environment=PATH=$INSTALL_DIR/venv/bin:$PATH
-ExecStart=$INSTALL_DIR/venv/bin/python src/web_app.py
+ExecStart=$INSTALL_DIR/venv/bin/python web_app.py
 Restart=always
 RestartSec=3
 

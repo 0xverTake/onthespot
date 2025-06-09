@@ -127,8 +127,8 @@ After=network.target
 [Service]
 Type=simple
 User=$USER
-WorkingDirectory=$INSTALL_DIR/src/onthespot
-ExecStart=/home/trn/onthespot/venv/bin/python /home/trn/onthespot/src/onthespot/web_app.py
+WorkingDirectory=$INSTALL_DIR/src
+ExecStart=/home/trn/onthespot/venv/bin/python /home/trn/onthespot/src/web_app.py
 Restart=always
 RestartSec=3
 
